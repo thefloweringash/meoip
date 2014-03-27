@@ -104,7 +104,7 @@ static inline const struct tunnel* tunnel_bsearch (const struct gre_host* h, con
 }
 
 void *gre_host_transact(void* _host) {
-	const struct gre_host * const host = (const struct gre_host * const) _host;
+	struct gre_host * const host = (struct gre_host * const) _host;
 
 	{
 		GRE_HOST_LOG_STR(host_str, VERBOSE, host);
@@ -117,6 +117,8 @@ void *gre_host_transact(void* _host) {
 	uint8_t * const buf = malloc(MAXPAYLOAD);
 
 	fd_set rfds;
+
+	gre_host_connect_socket(host);
 
 	while(1) {
 		/* block until we can read */
@@ -253,6 +255,11 @@ void *tunnel_transact(void *_tunnel) {
 					/* Silently drop frame, buffer is full. */
 					break;
 				}
+				else if(errno == EDESTADDRREQ){
+					/* Still in startup phase before
+					 * gre_host_connect(), just drop packet. */
+					break;
+				}
 				else{
 					log_msg(VERBOSE, "Error writing to raw socket (%d): %s\n", raw_socket, strerror(errno));
 					break;
@@ -352,7 +359,7 @@ void open_connections(){
 	int i;
 	for(i = 0; i < gHosts.count; ++i){
 		struct gre_host* host = gHosts.hosts[i];
-		gre_host_connect(host);
+		gre_host_open(host);
 	}
 }
 

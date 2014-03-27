@@ -77,13 +77,17 @@ struct tunnel* gre_host_add_new_tunnel(struct gre_host* host,
 
 /* Opens the GRE socket and all tunnels associated with it in
    preparation for read/write */
-void gre_host_connect(struct gre_host* host);
+void gre_host_open(struct gre_host* host);
 
 /* Closes the GRE socket and all tunnels associated with it */
 void gre_host_disconnect(struct gre_host* host);
 
-/* Opens, connects and binds the GRE socket. */
+/* Opens and binds the GRE socket. */
 void gre_host_open_socket(struct gre_host* host);
+
+/* Connects the GRE socket to the particular host. This is distinct
+   from open since we want to be able to connect later. */
+void gre_host_connect_socket(struct gre_host *host);
 
 /* Closes the GRE socket */
 void gre_host_close_socket(struct gre_host* host);

@@ -206,7 +206,7 @@ struct tunnel* gre_host_add_new_tunnel(struct gre_host* host, struct tunnel* tun
 	return t;
 }
 
-void gre_host_connect(struct gre_host* host){
+void gre_host_open(struct gre_host* host){
 	int j;
 
 	/* sort for binary search on receive */
@@ -268,9 +268,20 @@ void gre_host_open_socket(struct gre_host* host){
 			exit(1);
 		}
 	}
+	if(fcntl(host->socket_fd, F_SETFL, O_NONBLOCK) == -1){
+		const char* const err_str = strerror(errno);
+		GRE_HOST_LOG_STR(host_str, NORMAL, host);
+		log_msg(NORMAL, "Could not set GRE socket non-blocking for host %s: %s\n", host_str, err_str);
+		exit(1);
+	}
+}
+
+void gre_host_connect_socket(struct gre_host* host) {
 	while(connect(host->socket_fd, (const struct sockaddr*) &host->addr, host->addr_len) == -1){
 		if(errno == ENETUNREACH){
-			log_msg(VERBOSE, "Can't connect() GRE socket - network is not yet available (ENETUNREACH). Waiting 1 second...\n");
+			GRE_HOST_LOG_STR(host_str, VERBOSE, host);
+			log_msg(VERBOSE, "Can't connect() GRE socket %s - network is not yet available (ENETUNREACH). Waiting 1 second...\n",
+					host_str);
 			sleep(1);
 		}
 		else{
@@ -279,12 +290,6 @@ void gre_host_open_socket(struct gre_host* host){
 			log_msg(NORMAL, "Error connecting GRE socket for host %s: %s\n", host_str, err_str);
 			exit(1);
 		}
-	}
-	if(fcntl(host->socket_fd, F_SETFL, O_NONBLOCK) == -1){
-		const char* const err_str = strerror(errno);
-		GRE_HOST_LOG_STR(host_str, NORMAL, host);
-		log_msg(NORMAL, "Could not set GRE socket non-blocking for host %s: %s\n", host_str, err_str);
-		exit(1);
 	}
 }
 
